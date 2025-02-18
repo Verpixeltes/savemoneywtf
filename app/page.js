@@ -14,9 +14,9 @@ import 'tailwindcss/tailwind.css';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-// Erweiterte Geräteliste mit Angaben zum jährlichen Verbrauch (kWh/Jahr)
+// Geräteliste mit realistischen Jahresverbrauchswerten (kWh/Jahr)
 const devices = {
-  computer: { name: 'Computer', yearlyUsage: 200 }, // kWh/Jahr
+  computer: { name: 'Computer', yearlyUsage: 200 },
   fridge: { name: 'Kühlschrank', yearlyUsage: 70 },
   washingMachine: { name: 'Waschmaschine', yearlyUsage: 150 },
   dryer: { name: 'Trockner', yearlyUsage: 200 },
@@ -38,8 +38,9 @@ const devices = {
 export default function Home() {
   const [selectedDevices, setSelectedDevices] = useState({});
   const [numDevices, setNumDevices] = useState({});
-  const [renewablePricePerKWh, setRenewablePricePerKWh] = useState(0.94); // Erneuerbare Energien
-  const [fossilPricePerKWh, setFossilPricePerKWh] = useState(1.29); // Fossile Energien
+  // Realistische Preise in €/kWh:
+  const [renewablePricePerKWh, setRenewablePricePerKWh] = useState(0.94);
+  const [fossilPricePerKWh, setFossilPricePerKWh] = useState(1.29);
   const [timePeriod, setTimePeriod] = useState('month'); // 'month', 'year', '10years'
   const [savings, setSavings] = useState(0);
   const [timeSeries, setTimeSeries] = useState({
@@ -54,18 +55,17 @@ export default function Home() {
     ],
   });
 
-  // Berechne den durchschnittlichen Verbrauch pro Stunde
-  // 1 Jahr hat 8760 Stunden (24 Stunden * 365 Tage)
+  // Berechne den durchschnittlichen Verbrauch pro Stunde (in kWh)
+  // 1 Jahr hat 8760 Stunden.
   const totalPowerUsage = Object.keys(selectedDevices).reduce((total, deviceKey) => {
     const device = devices[deviceKey];
     const quantity = numDevices[deviceKey] || 0;
-
-    // Umrechnung von kWh/Jahr auf kWh/Stunde (Jahresverbrauch / 8760 Stunden)
+    // Umrechnung: Jahresverbrauch / 8760
     const hourlyUsage = device.yearlyUsage / 8760;
     return total + hourlyUsage * quantity;
   }, 0);
 
-  // Anzahl der Stunden im gewählten Zeitraum (Monat, Jahr, 10 Jahre)
+  // Bestimme die Stundenanzahl im gewählten Zeitraum
   let periodHours = 1;
   switch (timePeriod) {
     case 'month':
