@@ -1,4 +1,3 @@
-"use client";
 import { useState, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
@@ -8,23 +7,23 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 
 // Erweiterte Geräte mit Leistungsangaben und durchschnittlichem Stromverbrauch
 const devices = {
-  computer: { name: 'Computer', power: 0.2, yearlyUsage: 200 }, // 200 kWh pro Jahr
-  fridge: { name: 'Kühlschrank', power: 0.1, yearlyUsage: 70 }, // 70 kWh pro Jahr
-  washingMachine: { name: 'Waschmaschine', power: 0.5, yearlyUsage: 150 },
-  dryer: { name: 'Trockner', power: 2.5, yearlyUsage: 200 },
-  dishwasher: { name: 'Geschirrspüler', power: 1.8, yearlyUsage: 250 },
-  tv: { name: 'Fernseher', power: 0.1, yearlyUsage: 100 },
-  laptop: { name: 'Laptop', power: 0.05, yearlyUsage: 50 },
-  microwave: { name: 'Mikrowelle', power: 0.8, yearlyUsage: 40 },
-  vacuumCleaner: { name: 'Staubsauger', power: 0.8, yearlyUsage: 30 },
-  kettle: { name: 'Wasserkocher', power: 2.0, yearlyUsage: 70 },
-  coffeeMachine: { name: 'Kaffeemaschine', power: 0.8, yearlyUsage: 50 },
-  toaster: { name: 'Toaster', power: 1.0, yearlyUsage: 10 },
-  hairDryer: { name: 'Haartrockner', power: 1.2, yearlyUsage: 20 },
-  heater: { name: 'Heizlüfter', power: 2.0, yearlyUsage: 200 },
-  airConditioner: { name: 'Klimaanlage', power: 2.0, yearlyUsage: 400 },
-  stove: { name: 'Elektroherd', power: 3.0, yearlyUsage: 500 },
-  oven: { name: 'Backofen', power: 2.0, yearlyUsage: 300 },
+  computer: { name: 'Computer', power: 100, yearlyUsage: 200 }, // 200 kWh pro Jahr
+  fridge: { name: 'Kühlschrank', power: 100, yearlyUsage: 70 }, // 70 kWh pro Jahr
+  washingMachine: { name: 'Waschmaschine', power: 500, yearlyUsage: 150 },
+  dryer: { name: 'Trockner', power: 2500, yearlyUsage: 200 },
+  dishwasher: { name: 'Geschirrspüler', power: 1800, yearlyUsage: 250 },
+  tv: { name: 'Fernseher', power: 100, yearlyUsage: 100 },
+  laptop: { name: 'Laptop', power: 50, yearlyUsage: 50 },
+  microwave: { name: 'Mikrowelle', power: 800, yearlyUsage: 40 },
+  vacuumCleaner: { name: 'Staubsauger', power: 800, yearlyUsage: 30 },
+  kettle: { name: 'Wasserkocher', power: 2000, yearlyUsage: 70 },
+  coffeeMachine: { name: 'Kaffeemaschine', power: 800, yearlyUsage: 50 },
+  toaster: { name: 'Toaster', power: 1000, yearlyUsage: 10 },
+  hairDryer: { name: 'Haartrockner', power: 1200, yearlyUsage: 20 },
+  heater: { name: 'Heizlüfter', power: 2000, yearlyUsage: 200 },
+  airConditioner: { name: 'Klimaanlage', power: 2000, yearlyUsage: 400 },
+  stove: { name: 'Elektroherd', power: 3000, yearlyUsage: 500 },
+  oven: { name: 'Backofen', power: 2000, yearlyUsage: 300 },
 };
 
 export default function Home() {
@@ -46,15 +45,15 @@ export default function Home() {
       },
     ],
   });
-  //Kommentar
+
   // Gesamtverbrauch berechnen
   const totalPowerUsage = Object.keys(selectedDevices).reduce((total, deviceKey) => {
     const device = devices[deviceKey];
     const quantity = numDevices[deviceKey] || 0;
-    return total + device.power * quantity;
-  }, 0);
+    return total + (device.power / 1000) * quantity; // Umwandlung in kWh
+  }, 0); // kWh pro Stunde
 
-  // Berechnung der Kosten
+  // Berechnung der Stromkosten
   const renewableCost = totalPowerUsage * renewablePricePerKWh;
   const fossilCost = totalPowerUsage * fossilPricePerKWh;
 
