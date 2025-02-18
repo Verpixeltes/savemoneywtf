@@ -1,3 +1,4 @@
+"use client";
 import { useState, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
