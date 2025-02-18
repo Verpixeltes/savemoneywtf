@@ -1,14 +1,23 @@
 import { useState, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
 import 'tailwindcss/tailwind.css';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-// Erweiterte Geräte mit Leistungsangaben und durchschnittlichem Stromverbrauch
+// Erweiterte Geräteliste mit Angaben zur Leistung (W) und zum jährlichen Verbrauch (kWh/Jahr)
 const devices = {
-  computer: { name: 'Computer', power: 100, yearlyUsage: 200 }, // 200 kWh pro Jahr
-  fridge: { name: 'Kühlschrank', power: 100, yearlyUsage: 70 }, // 70 kWh pro Jahr
+  computer: { name: 'Computer', power: 100, yearlyUsage: 200 }, // 200 kWh/Jahr
+  fridge: { name: 'Kühlschrank', power: 100, yearlyUsage: 70 },   // 70 kWh/Jahr
   washingMachine: { name: 'Waschmaschine', power: 500, yearlyUsage: 150 },
   dryer: { name: 'Trockner', power: 2500, yearlyUsage: 200 },
   dishwasher: { name: 'Geschirrspüler', power: 1800, yearlyUsage: 250 },
@@ -29,8 +38,9 @@ const devices = {
 export default function Home() {
   const [selectedDevices, setSelectedDevices] = useState({});
   const [numDevices, setNumDevices] = useState({});
-  const [renewablePricePerKWh, setRenewablePricePerKWh] = useState(0.06); // Erneuerbare Energie (Solar, Wind, etc.)
-  const [fossilPricePerKWh, setFossilPricePerKWh] = useState(0.10); // Fossile Energie (z.B. Kohle)
+  // Realistische Preise in €/kWh:
+  const [renewablePricePerKWh, setRenewablePricePerKWh] = useState(0.94); // Erneuerbare Energien
+  const [fossilPricePerKWh, setFossilPricePerKWh] = useState(1.29);       // Fossile Energien
 
   const [timePeriod, setTimePeriod] = useState('month'); // 'month', 'year', '10years'
   const [savings, setSavings] = useState(0);
@@ -38,7 +48,7 @@ export default function Home() {
     labels: ['0', '1', '2', '3', '4', '5'],
     datasets: [
       {
-        label: 'Ersparnisse in € (Erneuerbar vs Fossil)',
+        label: 'Ersparnisse in € (Fossil - Erneuerbar)',
         data: [0, 0, 0, 0, 0, 0],
         borderColor: 'rgba(75, 192, 192, 1)',
         tension: 0.4,
@@ -46,39 +56,41 @@ export default function Home() {
     ],
   });
 
-  // Gesamtverbrauch berechnen
+  // Berechne den durchschnittlichen Verbrauch pro Stunde (in kWh)
+  // 1 Jahr hat 8760 Stunden.
   const totalPowerUsage = Object.keys(selectedDevices).reduce((total, deviceKey) => {
     const device = devices[deviceKey];
     const quantity = numDevices[deviceKey] || 0;
-    return total + (device.power / 1000) * quantity; // Umwandlung in kWh
-  }, 0); // kWh pro Stunde
+    return total + (device.yearlyUsage / 8760) * quantity;
+  }, 0);
 
-  // Berechnung der Stromkosten
-  const renewableCost = totalPowerUsage * renewablePricePerKWh;
-  const fossilCost = totalPowerUsage * fossilPricePerKWh;
+  // Anzahl der Stunden im gewählten Zeitraum
+  let periodHours = 1;
+  switch (timePeriod) {
+    case 'month':
+      periodHours = 720; // ca. 30 Tage
+      break;
+    case 'year':
+      periodHours = 8760; // 365 Tage
+      break;
+    case '10years':
+      periodHours = 87600; // 10 Jahre
+      break;
+    default:
+      periodHours = 1;
+  }
 
-  // Berechnung der Ersparnisse
+  // Berechne die Stromkosten im gewählten Zeitraum
+  const renewableCost = totalPowerUsage * periodHours * renewablePricePerKWh;
+  const fossilCost = totalPowerUsage * periodHours * fossilPricePerKWh;
+
+  // Ersparnisse: Differenz der Kosten
   useEffect(() => {
-    let timeMultiplier = 1;
-    switch (timePeriod) {
-      case 'month':
-        timeMultiplier = 720; // 24 Stunden * 30 Tage
-        break;
-      case 'year':
-        timeMultiplier = 8760; // 24 Stunden * 365 Tage
-        break;
-      case '10years':
-        timeMultiplier = 87600; // 24 Stunden * 365 Tage * 10 Jahre
-        break;
-      default:
-        timeMultiplier = 1;
-    }
-
-    const savedAmount = (fossilCost - renewableCost) * timeMultiplier;
+    const savedAmount = fossilCost - renewableCost;
     setSavings(savedAmount);
-  }, [numDevices, renewablePricePerKWh, fossilPricePerKWh, timePeriod]);
+  }, [totalPowerUsage, renewableCost, fossilCost, timePeriod]);
 
-  // Graph aktualisieren
+  // Aktualisiere den Graphen (Live-Graph)
   useEffect(() => {
     setTimeSeries((prevState) => {
       const newData = [...prevState.datasets[0].data];
@@ -104,12 +116,15 @@ export default function Home() {
       <h1 className="text-3xl font-bold text-center mb-10">Stromverbrauch & Kosten-Simulation</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+        {/* Geräteliste */}
         <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
           <h2 className="text-xl font-semibold mb-5">Wählen Sie Geräte</h2>
           <div className="space-y-4">
             {Object.keys(devices).map((deviceKey) => (
               <div key={deviceKey} className="flex justify-between items-center">
-                <span>{devices[deviceKey].name} (Durchschnittlicher Verbrauch: {devices[deviceKey].yearlyUsage} kWh/Jahr)</span>
+                <span>
+                  {devices[deviceKey].name} (Ø Verbrauch: {devices[deviceKey].yearlyUsage} kWh/Jahr)
+                </span>
                 <div className="flex items-center space-x-3">
                   <button
                     className="bg-green-500 text-white px-4 py-2 rounded-full"
@@ -123,20 +138,26 @@ export default function Home() {
                   >
                     -
                   </button>
-                  <span>{numDevices[deviceKey] || 0} Geräte</span>
+                  <span>{numDevices[deviceKey] || 0}x</span>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
+        {/* Vergleichsansicht */}
         <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
-          <h2 className="text-xl font-semibold mb-5">Vergleich zwischen Erneuerbaren und Fossilen Energien</h2>
+          <h2 className="text-xl font-semibold mb-5">Vergleich: Erneuerbar vs. Fossil</h2>
           <div className="space-y-4">
-            <p>Gesamtverbrauch: {totalPowerUsage.toFixed(2)} kWh pro Stunde</p>
-            <p>Stromkosten (Erneuerbare Energie): {renewableCost.toFixed(2)} €</p>
-            <p>Stromkosten (Fossile Energie): {fossilCost.toFixed(2)} €</p>
-            <p className="text-green-400">Ersparnisse bei Erneuerbarer Energie ({timePeriod}): {savings.toFixed(2)} €</p>
+            <p>
+              Durchschnittlicher Verbrauch: {totalPowerUsage.toFixed(3)} kWh pro Stunde <br />
+              (entspricht {(totalPowerUsage * periodHours).toFixed(1)} kWh in {timePeriod})
+            </p>
+            <p>Stromkosten (Erneuerbar): {renewableCost.toFixed(2)} €</p>
+            <p>Stromkosten (Fossil): {fossilCost.toFixed(2)} €</p>
+            <p className="text-green-400">
+              Ersparnisse (Fossil - Erneuerbar) in {timePeriod}: {savings.toFixed(2)} €
+            </p>
             <div className="mt-5">
               <Line data={timeSeries} options={{ responsive: true }} />
             </div>
@@ -144,27 +165,33 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Steuerung */}
       <div className="mt-10 text-center">
         <h3 className="text-lg font-semibold">Energiepreise:</h3>
         <div className="space-x-4">
-          <span className="bg-green-500 text-white px-6 py-2 rounded-full">Erneuerbar: {renewablePricePerKWh} €/kWh</span>
-          <span className="bg-red-500 text-white px-6 py-2 rounded-full">Fossil: {fossilPricePerKWh} €/kWh</span>
+          <span className="bg-green-500 text-white px-6 py-2 rounded-full">
+            Erneuerbar: {renewablePricePerKWh} €/kWh
+          </span>
+          <span className="bg-red-500 text-white px-6 py-2 rounded-full">
+            Fossil: {fossilPricePerKWh} €/kWh
+          </span>
         </div>
         <div className="mt-5">
           <button
             className="bg-blue-500 text-white px-6 py-2 rounded-full mt-4"
-            onClick={() => setRenewablePricePerKWh(0.06)}
+            onClick={() => setRenewablePricePerKWh(0.94)}
           >
-            Setze Preis für Erneuerbare auf 0,06 €/kWh
+            Setze Preis Erneuerbar auf 0,94 €/kWh
           </button>
           <button
             className="bg-blue-500 text-white px-6 py-2 rounded-full mt-4"
-            onClick={() => setFossilPricePerKWh(0.10)}
+            onClick={() => setFossilPricePerKWh(1.29)}
           >
-            Setze Preis für Fossil auf 0,10 €/kWh
+            Setze Preis Fossil auf 1,29 €/kWh
           </button>
         </div>
 
+        {/* Zeitraum-Auswahl */}
         <div className="mt-10">
           <h3 className="text-xl font-semibold mb-5">Zeitraum auswählen</h3>
           <div className="space-x-4">
