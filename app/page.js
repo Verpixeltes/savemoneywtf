@@ -46,7 +46,7 @@ export default function Home() {
       },
     ],
   });
-
+  //Kommentar
   // Gesamtverbrauch berechnen
   const totalPowerUsage = Object.keys(selectedDevices).reduce((total, deviceKey) => {
     const device = devices[deviceKey];
