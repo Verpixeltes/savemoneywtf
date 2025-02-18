@@ -14,34 +14,32 @@ import 'tailwindcss/tailwind.css';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-// Erweiterte Geräteliste mit Angaben zur Leistung (W) und zum jährlichen Verbrauch (kWh/Jahr)
+// Erweiterte Geräteliste mit Angaben zum jährlichen Verbrauch (kWh/Jahr)
 const devices = {
-  computer: { name: 'Computer', power: 100, yearlyUsage: 200 }, // 200 kWh/Jahr
-  fridge: { name: 'Kühlschrank', power: 100, yearlyUsage: 70 },   // 70 kWh/Jahr
-  washingMachine: { name: 'Waschmaschine', power: 500, yearlyUsage: 150 },
-  dryer: { name: 'Trockner', power: 2500, yearlyUsage: 200 },
-  dishwasher: { name: 'Geschirrspüler', power: 1800, yearlyUsage: 250 },
-  tv: { name: 'Fernseher', power: 100, yearlyUsage: 100 },
-  laptop: { name: 'Laptop', power: 50, yearlyUsage: 50 },
-  microwave: { name: 'Mikrowelle', power: 800, yearlyUsage: 40 },
-  vacuumCleaner: { name: 'Staubsauger', power: 800, yearlyUsage: 30 },
-  kettle: { name: 'Wasserkocher', power: 2000, yearlyUsage: 70 },
-  coffeeMachine: { name: 'Kaffeemaschine', power: 800, yearlyUsage: 50 },
-  toaster: { name: 'Toaster', power: 1000, yearlyUsage: 10 },
-  hairDryer: { name: 'Haartrockner', power: 1200, yearlyUsage: 20 },
-  heater: { name: 'Heizlüfter', power: 2000, yearlyUsage: 200 },
-  airConditioner: { name: 'Klimaanlage', power: 2000, yearlyUsage: 400 },
-  stove: { name: 'Elektroherd', power: 3000, yearlyUsage: 500 },
-  oven: { name: 'Backofen', power: 2000, yearlyUsage: 300 },
+  computer: { name: 'Computer', yearlyUsage: 200 }, // kWh/Jahr
+  fridge: { name: 'Kühlschrank', yearlyUsage: 70 },
+  washingMachine: { name: 'Waschmaschine', yearlyUsage: 150 },
+  dryer: { name: 'Trockner', yearlyUsage: 200 },
+  dishwasher: { name: 'Geschirrspüler', yearlyUsage: 250 },
+  tv: { name: 'Fernseher', yearlyUsage: 100 },
+  laptop: { name: 'Laptop', yearlyUsage: 50 },
+  microwave: { name: 'Mikrowelle', yearlyUsage: 40 },
+  vacuumCleaner: { name: 'Staubsauger', yearlyUsage: 30 },
+  kettle: { name: 'Wasserkocher', yearlyUsage: 70 },
+  coffeeMachine: { name: 'Kaffeemaschine', yearlyUsage: 50 },
+  toaster: { name: 'Toaster', yearlyUsage: 10 },
+  hairDryer: { name: 'Haartrockner', yearlyUsage: 20 },
+  heater: { name: 'Heizlüfter', yearlyUsage: 200 },
+  airConditioner: { name: 'Klimaanlage', yearlyUsage: 400 },
+  stove: { name: 'Elektroherd', yearlyUsage: 500 },
+  oven: { name: 'Backofen', yearlyUsage: 300 },
 };
 
 export default function Home() {
   const [selectedDevices, setSelectedDevices] = useState({});
   const [numDevices, setNumDevices] = useState({});
-  // Realistische Preise in €/kWh:
   const [renewablePricePerKWh, setRenewablePricePerKWh] = useState(0.94); // Erneuerbare Energien
-  const [fossilPricePerKWh, setFossilPricePerKWh] = useState(1.29);       // Fossile Energien
-
+  const [fossilPricePerKWh, setFossilPricePerKWh] = useState(1.29); // Fossile Energien
   const [timePeriod, setTimePeriod] = useState('month'); // 'month', 'year', '10years'
   const [savings, setSavings] = useState(0);
   const [timeSeries, setTimeSeries] = useState({
@@ -56,15 +54,18 @@ export default function Home() {
     ],
   });
 
-  // Berechne den durchschnittlichen Verbrauch pro Stunde (in kWh)
-  // 1 Jahr hat 8760 Stunden.
+  // Berechne den durchschnittlichen Verbrauch pro Stunde
+  // 1 Jahr hat 8760 Stunden (24 Stunden * 365 Tage)
   const totalPowerUsage = Object.keys(selectedDevices).reduce((total, deviceKey) => {
     const device = devices[deviceKey];
     const quantity = numDevices[deviceKey] || 0;
-    return total + (device.yearlyUsage / 8760) * quantity;
+
+    // Umrechnung von kWh/Jahr auf kWh/Stunde (Jahresverbrauch / 8760 Stunden)
+    const hourlyUsage = device.yearlyUsage / 8760;
+    return total + hourlyUsage * quantity;
   }, 0);
 
-  // Anzahl der Stunden im gewählten Zeitraum
+  // Anzahl der Stunden im gewählten Zeitraum (Monat, Jahr, 10 Jahre)
   let periodHours = 1;
   switch (timePeriod) {
     case 'month':
@@ -84,7 +85,7 @@ export default function Home() {
   const renewableCost = totalPowerUsage * periodHours * renewablePricePerKWh;
   const fossilCost = totalPowerUsage * periodHours * fossilPricePerKWh;
 
-  // Ersparnisse: Differenz der Kosten
+  // Ersparnisse: Differenz der Kosten (Fossil - Erneuerbar)
   useEffect(() => {
     const savedAmount = fossilCost - renewableCost;
     setSavings(savedAmount);
